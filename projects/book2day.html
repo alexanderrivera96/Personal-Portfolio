@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Book2Day — Case Study</title>
+<meta name="description" content="Book2Day: a multi-tenant booking and business management platform for service businesses in Belize. Django, PostgreSQL, htmx, Celery, Render, Cloudflare R2, WhatsApp Cloud API.">
+<style>
+  :root {
+    --bg:#ffffff; --fg:#1a1a1a; --muted:#5f6368; --line:#e3e5e8;
+    --accent:#0f766e; --accent-soft:#e6f4f2; --card:#f8f9fa; --code:#f1f3f4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#111315; --fg:#eceff1; --muted:#9aa0a6; --line:#2a2e33; --accent:#2dd4bf; --accent-soft:#12302d; --card:#181b1e; --code:#1e2226; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:17px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  .wrap { max-width:800px; margin:0 auto; padding:48px 22px 80px; }
+  a { color:var(--accent); }
+  code { font:0.88em ui-monospace,SFMono-Regular,Menlo,monospace; background:var(--code); padding:1px 5px; border-radius:4px; }
+  .back { font-size:14px; text-decoration:none; color:var(--muted); }
+  .eyebrow { margin-top:28px; font-size:13px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); font-weight:600; }
+  h1 { font-size:clamp(34px,6vw,50px); line-height:1.1; margin:8px 0 14px; }
+  .lede { font-size:20px; color:var(--muted); margin:0 0 26px; }
+  .actions { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:34px; }
+  .btn { display:inline-block; padding:10px 18px; border-radius:8px; text-decoration:none; font-weight:600; font-size:15px; background:var(--accent); color:#fff; }
+  .meta { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; padding:18px; border:1px solid var(--line); border-radius:12px; background:var(--card); margin-bottom:40px; }
+  .meta span { display:block; font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+  .meta strong { font-size:15px; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:8px 0 10px; }
+  .stat { padding:16px; border-radius:12px; background:var(--accent-soft); }
+  .stat b { display:block; font-size:30px; color:var(--accent); line-height:1.1; }
+  .stat span { font-size:14px; color:var(--muted); }
+  .hero-img { width:100%; aspect-ratio:16/10; border-radius:14px; background:var(--accent-soft); display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:14px; margin:36px 0 10px; overflow:hidden; }
+  .hero-img img { width:100%; height:100%; object-fit:cover; }
+  h2 { font-size:25px; margin:52px 0 12px; }
+  h3 { font-size:18px; margin:24px 0 4px; }
+  ul { padding-left:20px; } li { margin:6px 0; }
+  .timeline { border-left:2px solid var(--line); padding-left:20px; margin:18px 0; }
+  .timeline .step { position:relative; margin-bottom:18px; }
+  .timeline .step::before { content:""; position:absolute; left:-27px; top:8px; width:12px; height:12px; border-radius:50%; background:var(--accent); }
+  .timeline .label { font-weight:700; }
+  table { width:100%; border-collapse:collapse; font-size:15px; margin:10px 0; }
+  th, td { text-align:left; vertical-align:top; padding:10px 12px; border-bottom:1px solid var(--line); }
+  th { width:150px; color:var(--muted); font-weight:600; }
+  .diagram { border:1px solid var(--line); border-radius:12px; background:var(--card); padding:14px; margin:14px 0; overflow-x:auto; }
+  .diagram svg { display:block; width:100%; min-width:560px; height:auto; }
+  .diagram text { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; fill:var(--fg); }
+  .diagram .sub { fill:var(--muted); font-size:11px; }
+  .diagram .box { fill:var(--bg); stroke:var(--line); stroke-width:1.5; }
+  .diagram .box.app { stroke:var(--accent); }
+  .diagram .edge { stroke:var(--muted); stroke-width:1.4; fill:none; marker-end:url(#arrow); }
+  .diagram .ext { fill:var(--accent-soft); stroke:none; }
+  .hl { counter-reset:hl; list-style:none; padding:0; }
+  .hl li { counter-increment:hl; position:relative; padding:16px 16px 16px 58px; border:1px solid var(--line); border-radius:12px; margin:12px 0; }
+  .hl li::before { content:counter(hl); position:absolute; left:16px; top:16px; width:28px; height:28px; border-radius:50%; background:var(--accent); color:#fff; font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center; }
+  .hl strong { display:block; margin-bottom:4px; }
+  .scope { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; }
+  .scope div { padding:16px; border-radius:12px; background:var(--card); border:1px solid var(--line); }
+  .scope h3 { margin-top:0; }
+  .scope ul { margin:0; font-size:15px; }
+  .shots { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-top:14px; }
+  .shots figure { margin:0; }
+  .shots .ph { aspect-ratio:9/16; border-radius:12px; background:var(--card); border:1px dashed var(--line); display:flex; align-items:center; justify-content:center; text-align:center; padding:12px; color:var(--muted); font-size:13px; overflow:hidden; }
+  .shots img { width:100%; height:100%; object-fit:cover; }
+  figcaption { font-size:13px; color:var(--muted); margin-top:6px; }
+  footer { margin-top:60px; padding-top:20px; border-top:1px solid var(--line); font-size:14px; color:var(--muted); }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <a class="back" href="../index.html">← Back to portfolio</a>
+
+  <div class="eyebrow">Case study · Multi-tenant SaaS · AI-assisted build · Belize</div>
+  <h1>Book2Day</h1>
+  <p class="lede">A multi-tenant booking platform for service businesses in Belize, such as barbers, nail techs, dentists and fitness studios. Customers find a business, see live availability and book. Providers run their calendar, team, clients, classes and analytics from one dashboard.</p>
+
+  <div class="actions">
+    <a class="btn" href="https://book2day.bz" target="_blank" rel="noopener">Visit live site ↗</a>
+  </div>
+
+  <div class="meta">
+    <div><span>My role</span><strong>Product owner · design · QA</strong></div>
+    <div><span>Built with</span><strong>Claude (AI pair engineer)</strong></div>
+    <div><span>Timeline</span><strong>[2025 – present]</strong></div>
+    <div><span>Core stack</span><strong>Django · PostgreSQL · htmx</strong></div>
+    <div><span>Status</span><strong>Live in production</strong></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b>~5</b><span>providers taking real appointments</span></div>
+    <div class="stat"><b>430+</b><span>automated tests in CI</span></div>
+    <div class="stat"><b>&lt;50 ms</b><span>typical page time, profiled locally under load</span></div>
+    <div class="stat"><b>0</b><span>possible double-bookings, enforced by the database</span></div>
+  </div>
+
+  <!-- Replace with: <img src="/images/book2day-hero.png" alt="Book2Day provider calendar on a phone"> -->
+  <div class="hero-img">Hero image: provider calendar on a phone</div>
+
+  <h2>The problem</h2>
+  <p>Most service providers in Belize own the practice <em>and</em> do the work. There's no receptionist. Bookings arrive by phone, DMs and walk-ins while they're with a client, so messages go unanswered and slots get double-booked. Existing salon software is built for larger teams, priced in USD, and doesn't fit clients who live on WhatsApp.</p>
+
+  <h2>How the product evolved</h2>
+  <div class="timeline">
+    <div class="step"><div class="label">v1: Booking marketplace</div>Customers browse local providers by category and town and book open times.</div>
+    <div class="step"><div class="label">The insight</div>Providers' biggest pain wasn't finding customers. It was running the business while also being the staff. They needed a front desk.</div>
+    <div class="step"><div class="label">v2: Business management tool</div>Calendar, team, clients, services, classes, memberships, expenses and analytics for the provider. The marketplace became the discovery channel feeding each provider's calendar.</div>
+    <div class="step"><div class="label">Scope decision</div>Automated reminders were cut. Clients get one WhatsApp confirmation when the booking is set, with a link to reschedule.</div>
+  </div>
+
+  <h2>How it was built</h2>
+  <p>I owned the product end to end and built it with an AI coding assistant. I made the product, design and architecture decisions and set what "done" meant. Claude wrote the implementation.</p>
+  <ul>
+    <li><strong>Product:</strong> talked to providers, chose the pivot from marketplace to business tool, and set scope, including cutting reminders to ship a reliable confirmation flow.</li>
+    <li><strong>Design decisions:</strong> UX and the design system, plus the technical direction: Django and htmx instead of a single-page app, correctness enforced by the database, tenant isolation and the security bar.</li>
+    <li><strong>Testing:</strong> defined acceptance criteria and edge cases (concurrent holds, daylight-saving changes, cross-tenant access), tested every flow by hand on phone and desktop, and gated releases on the 430+ test CI suite and the layout checks.</li>
+    <li><strong>Implementation:</strong> written by Claude from my specs, then reviewed and tested by me before merging to main.</li>
+  </ul>
+
+  <h2>Architecture</h2>
+  <p>One Django codebase deployed to Render as three services: the customer site and provider dashboard, a separate admin console with MFA, and a Celery worker. Every merge to <code>main</code> deploys automatically.</p>
+  <div class="diagram" role="img" aria-label="Architecture: web and admin services share PostgreSQL and Redis; a Celery worker uses Redis and calls external services.">
+    <svg viewBox="0 0 680 400" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#888"/>
+        </marker>
+      </defs>
+      <!-- users -->
+      <text x="140" y="24" text-anchor="middle" font-size="13" font-weight="600">Customers &amp; providers</text>
+      <text x="540" y="24" text-anchor="middle" font-size="13" font-weight="600">Platform admins</text>
+      <path class="edge" d="M140,32 L140,62"/>
+      <path class="edge" d="M540,32 L540,62"/>
+      <!-- web -->
+      <rect class="box app" x="60" y="66" width="160" height="62" rx="10"/>
+      <text x="140" y="92" text-anchor="middle" font-size="14" font-weight="700">bookbz-web</text>
+      <text class="sub" x="140" y="112" text-anchor="middle">Django + htmx · DRF API</text>
+      <!-- admin -->
+      <rect class="box app" x="460" y="66" width="160" height="62" rx="10"/>
+      <text x="540" y="92" text-anchor="middle" font-size="14" font-weight="700">bookbz-admin</text>
+      <text class="sub" x="540" y="112" text-anchor="middle">Password + TOTP MFA</text>
+      <text class="sub" x="540" y="144" text-anchor="middle">optional Cloudflare Access</text>
+      <!-- postgres -->
+      <rect class="box" x="260" y="160" width="160" height="56" rx="10"/>
+      <text x="340" y="184" text-anchor="middle" font-size="14" font-weight="700">PostgreSQL</text>
+      <text class="sub" x="340" y="203" text-anchor="middle">range types · GiST exclusion</text>
+      <!-- redis -->
+      <rect class="box" x="260" y="250" width="160" height="50" rx="10"/>
+      <text x="340" y="280" text-anchor="middle" font-size="14" font-weight="700">Redis</text>
+      <!-- worker -->
+      <rect class="box app" x="460" y="240" width="160" height="70" rx="10"/>
+      <text x="540" y="264" text-anchor="middle" font-size="14" font-weight="700">bookbz-worker</text>
+      <text class="sub" x="540" y="282" text-anchor="middle">Celery + beat: holds, classes,</text>
+      <text class="sub" x="540" y="297" text-anchor="middle">insights, calendar sync</text>
+      <!-- edges -->
+      <path class="edge" d="M140,128 L140,188 L256,188"/>
+      <path class="edge" d="M140,188 L140,275 L256,275"/>
+      <path class="edge" d="M540,150 L540,188 L424,188"/>
+      <path class="edge" d="M456,275 L424,275"/>
+      <path class="edge" d="M500,240 L420,212"/>
+      <!-- externals -->
+      <rect class="ext" x="40" y="340" width="600" height="44" rx="10"/>
+      <text x="340" y="367" text-anchor="middle" font-size="13">Cloudflare R2  ·  WhatsApp Cloud API  ·  Google Calendar  ·  OpenFreeMap</text>
+      <path class="edge" d="M540,310 L540,336"/>
+      <path class="edge" d="M100,128 L100,336"/>
+    </svg>
+  </div>
+
+  <h2>Stack</h2>
+  <table>
+    <tr><th>Backend</th><td>Django 5.2 LTS (Python), Django REST Framework (REST API v1)</td></tr>
+    <tr><th>Frontend</th><td>Server-rendered Django templates + htmx, no SPA. Custom CSS design system with colour and radius tokens. Responsive from 320 px up</td></tr>
+    <tr><th>Database</th><td>PostgreSQL with range types, GiST exclusion constraints and <code>btree_gist</code></td></tr>
+    <tr><th>Background jobs</th><td>Celery workers and Celery beat on Redis</td></tr>
+    <tr><th>Hosting</th><td>Render: web, admin (separate host, <code>SITE_ROLE=admin</code>) and worker, all from one codebase. Auto-deploy on merge to main</td></tr>
+    <tr><th>Edge &amp; storage</th><td>Cloudflare DNS; Cloudflare R2 (S3-compatible) via django-storages</td></tr>
+    <tr><th>Maps</th><td>MapLibre GL, self-hosted, with OpenFreeMap tiles and a custom style</td></tr>
+    <tr><th>Messaging</th><td>Meta WhatsApp Cloud API, called directly, with signed webhooks</td></tr>
+    <tr><th>Integrations</th><td>Google Calendar (OAuth with PKCE, one-way sync), iCal feeds</td></tr>
+    <tr><th>CI</th><td>GitHub Actions: 430+ tests plus headless Chrome layout checks at desktop and phone widths</td></tr>
+  </table>
+
+  <h2>Engineering highlights</h2>
+  <ol class="hl">
+    <li><strong>The database makes double-booking impossible</strong>Each appointment stores a time range that includes the service's buffer minutes, and a PostgreSQL exclusion constraint stops any two blocking appointments for the same staff member from overlapping. Checkout holds are rows in the same table with status <code>held</code>, so one constraint covers holds, pending requests and confirmed bookings. Confirming updates the held row in place, leaving no window for a second customer. A test fires 20 concurrent holds at one slot and checks that exactly one succeeds.</li>
+    <li><strong>One function controls every status change</strong>A single <code>transition()</code> handles held → pending approval → confirmed → completed or no-show, plus the cancel paths. Each change bumps a version number and sends events only after the database commit, so the API, webhooks, scheduled jobs and admin actions stay consistent, and stale jobs can't act on outdated data.</li>
+    <li><strong>Availability is calculated live, never stored</strong>The engine starts from weekly hours, subtracts bookings, time off and holidays, then places start times on a local-clock grid. It's time-zone safe and tested across a daylight-saving change.</li>
+    <li><strong>Group classes reuse the same engine</strong>Each class seat is an appointment. Seats in the same class share an overlap key so they don't block each other, but the class still blocks the instructor's one-on-one time. Taking the last spot locks the class row.</li>
+    <li><strong>Insights: analytics built from bookings</strong>Nightly jobs fill daily and hourly summary tables. Providers see income by month, weekday and hour, a busy-hours heat map, and which services earn the most per hour. Charts are SVG drawn on the server, with no JavaScript charting library.</li>
+    <li><strong>Strict tenant isolation</strong>Every view checks business membership and capabilities, and querysets are scoped to the business. A test walks every URL and tries to reach another business's data.</li>
+    <li><strong>Security in depth</strong>Same-origin-only Content Security Policy with no inline JavaScript. Uploaded photos re-encoded to WebP with EXIF and GPS removed. Sign-in codes HMAC-hashed and throttled. OAuth tokens encrypted. Webhook signatures verified. Append-only audit logs for admin and owner actions. Fresh sign-in required for sensitive actions.</li>
+    <li><strong>Profiled under load</strong>Tested with 300+ businesses and a shop with 6,000+ bookings. Most pages run 3–29 queries in under about 50 ms locally, with no one-query-per-row problems. The ~1 MB map library loads only when a map scrolls into view.</li>
+  </ol>
+
+  <h2>Product scope</h2>
+  <div class="scope">
+    <div><h3>Customers</h3><ul><li>Search and discovery</li><li>Business pages with galleries and maps</li><li>Live booking, guest or account</li><li>WhatsApp confirmation with reschedule link</li><li>Manage booking by link</li><li>Verified reviews</li><li>Spanish language</li></ul></div>
+    <div><h3>Providers</h3><ul><li>Day / week / month calendar</li><li>Approvals and walk-ins</li><li>Team and staff logins</li><li>Clients with private notes</li><li>Services and add-ons</li><li>Group classes and memberships</li><li>Expenses and Insights</li><li>Google Calendar and iCal sync</li></ul></div>
+    <div><h3>Platform admin</h3><ul><li>Business onboarding</li><li>Moderation, suspend or delete</li><li>Audit logs</li><li>Holiday and boost planning</li></ul></div>
+  </div>
+
+  <h2>Screens</h2>
+  <div class="shots">
+    <!-- Replace each .ph div with <img src="..." alt="..."> -->
+    <figure><div class="ph">Provider calendar</div><figcaption>The provider's week at a glance</figcaption></figure>
+    <figure><div class="ph">Insights heat map</div><figcaption>Busy hours and income by service</figcaption></figure>
+    <figure><div class="ph">Business page + booking</div><figcaption>Live availability and guest checkout</figcaption></figure>
+    <figure><div class="ph">WhatsApp confirmation</div><figcaption>Confirmation with reschedule link</figcaption></figure>
+  </div>
+
+  <h2>What I learned</h2>
+  <p>[Two or three sentences in your own words. For example: how to direct an AI engineer well (precise specs, explicit edge cases, tests as the contract); why pushing correctness into PostgreSQL constraints made AI-written code safer to trust; listening to providers turned a marketplace into a tool they run their business on.]</p>
+
+  <footer>
+    <a href="https://book2day.bz" target="_blank" rel="noopener">book2day.bz</a> · <a href="../index.html">More projects</a>
+  </footer>
+</main>
+</body>
+</html>
